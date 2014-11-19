@@ -1,4 +1,4 @@
-module Token (tokenize) where
+module MarkovTweets.Token (tokenize) where
 
 import Data.Char
 

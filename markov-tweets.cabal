@@ -1,0 +1,29 @@
+name:                markov-tweets
+version:             0.1.0.0
+synopsis:            Tweet text generated with markov chains.
+homepage:            https://github.com/jeanqasaur/markov-tweets
+license:             GPL-2
+license-file:        LICENSE
+author:              Jean Yang
+maintainer:          jean.yang.writeme@gmail.com
+copyright:           (c) 2014 Jean Yang
+category:            Web
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     MarkovTweets.Chain
+                     , MarkovTweets.Token
+  hs-source-dirs:      src
+  build-depends:       base >=4.7 && <4.8
+                     , containers >=0.5 && <0.6
+                     , random >=1.0 && <1.1
+
+executable generate-tweets
+  main-is:             Main.hs
+  build-depends:       base >=4.7 && <4.8
+                     , random >=1.0 && <1.1
+                     , markov-tweets
+  hs-source-dirs:      src
+  default-language:    Haskell2010
