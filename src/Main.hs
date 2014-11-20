@@ -80,8 +80,8 @@ main = do
     (\g _ ->
       let (output, g') = generate chain oNumChars g
           cleanOutput  = cleanTweet output in
-        do  putStrLn output
-            appendFile oOutputFile (output ++ "\n")
+        do  putStrLn cleanOutput
+            appendFile oOutputFile (cleanOutput ++ "\n")
             return g')
     generator
     [1..oNumTweets]
