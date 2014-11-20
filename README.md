@@ -13,6 +13,7 @@ Example of arguments for running:
 ```
 cabal run -- -iin.txt -oout.txt -n50 -p3
 ```
+General usage:
 
 ```
 Usage: ic [OPTION...] files...
