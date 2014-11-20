@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+import Control.Monad ( foldM_ )
 import Data.Maybe ( fromMaybe )
 import System.Console.GetOpt
 import System.Environment ( getArgs )
@@ -9,7 +10,8 @@ import MarkovTweets.Token
 
 data Options = Options { oInputFile:: String, oOutputFile:: String
                        , oNumChars:: Int, oPrefixLen:: Int
-                       , oStripPunctuation:: Bool }
+                       , oStripPunctuation:: Bool
+                       , oNumTweets:: Int }
   deriving Show
 
 options :: [OptDescr (Options -> Options)]
@@ -33,8 +35,13 @@ options = [ Option "i" ["input"]
               "prefix len PREFIXLEN"
           , Option "s"  ["strip punctuation"]
               (NoArg
-                  (\opts -> opts {oStripPunctuation = True} ))
-                  "strip punctuation" ]
+                  (\opts -> opts { oStripPunctuation = True } ))
+                  "strip punctuation"
+          , Option "n"  ["number of tweets"]
+              (ReqArg
+                (\n opts -> opts { oNumTweets = read n } )
+                "NUMTWEETS")
+              "number of tweets NUMTWEETS" ]
 
 compilerOpts :: [String] -> IO ([Options -> Options], [String])
 compilerOpts argv =
@@ -49,6 +56,7 @@ defaultOptions = Options { oInputFile=""
                          , oNumChars=200
                          , oPrefixLen=2
                          , oStripPunctuation=False
+                         , oNumTweets=1
                          }
 
 main :: IO ()
@@ -66,9 +74,12 @@ main = do
   -- Create a new random number generator.
   generator <- newStdGen
 
-  -- Generate text.
-  let output = generate chain oNumChars generator
-
-  -- Print text to output file.
-  putStrLn output
-  writeFile oOutputFile output
+  -- Generate text and write output.
+  foldM_
+    (\g _ ->
+      let (output, g') = generate chain oNumChars g in
+        do  putStrLn output
+            appendFile oOutputFile (output ++ "\n")
+            return g')
+    generator
+    [1..oNumTweets]

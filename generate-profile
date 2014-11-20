@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 # Pass the input file as the first parameter
-cabal configure --enable-executable-profiling --enable-library-profiling --ghc-option=-auto-all --ghc-option=-rtsopts
+cabal configure --enable-executable-profiling --ghc-option=-auto-all --ghc-option=-rtsopts
+cabal build
 ./dist/build/generate-tweets/generate-tweets +RTS -p -RTS -i $1 -o out.txt

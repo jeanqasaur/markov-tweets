@@ -26,18 +26,18 @@ buildChain bodyList prefixLen =
     updateMap curMap key elt =
       Map.insert key (elt:(fromMaybe [] (Map.lookup key curMap))) curMap
 
-generate :: Chain -> Int -> StdGen -> String
+generate :: Chain -> Int -> StdGen -> (String, StdGen)
 generate chain maxlen g = loop fstNg g' (unwords fstNg)
   where
     (fstNg, g') = getFirstNGram g
-    loop :: NGram -> StdGen -> String -> String
-    loop _ _ acc | length acc > maxlen = unwords $ init $ words acc
+    loop :: NGram -> StdGen -> String -> (String, StdGen)
+    loop _ g acc | length acc > maxlen = (unwords $ init $ words acc, g)
     loop ng g acc = case getNextNGram ng g of
         Just (word, ng', g') ->
             if length acc + length word > maxlen
-                 then acc
+                 then (acc, g')
                  else loop ng' g' (acc ++ " " ++ word)
-        Nothing -> acc
+        Nothing -> (acc, g)
 
     capitalKeys = filter isStartNGram (Map.keys chain)
       where
