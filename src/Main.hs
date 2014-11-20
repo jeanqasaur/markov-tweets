@@ -6,6 +6,7 @@ import System.Environment ( getArgs )
 import System.Random
 
 import MarkovTweets.Chain
+import MarkovTweets.CleanTweets
 import MarkovTweets.Token
 
 data Options = Options { oInputFile:: String, oOutputFile:: String
@@ -25,7 +26,7 @@ options = [ Option "i" ["input"]
               "A output FILE"
           , Option "c"  ["numchars"]
               (OptArg
-                  (\n opts -> opts { oNumChars = read (fromMaybe "200" n) })
+                  (\n opts -> opts { oNumChars = read (fromMaybe "140" n) })
                   "NUMCHARS")
               "The number of characters in the output"
           , Option "p"  ["prefixlen"]
@@ -53,7 +54,7 @@ compilerOpts argv =
 defaultOptions :: Options
 defaultOptions = Options { oInputFile=""
                          , oOutputFile=""
-                         , oNumChars=200
+                         , oNumChars=140
                          , oPrefixLen=2
                          , oStripPunctuation=False
                          , oNumTweets=1
@@ -77,7 +78,8 @@ main = do
   -- Generate text and write output.
   foldM_
     (\g _ ->
-      let (output, g') = generate chain oNumChars g in
+      let (output, g') = generate chain oNumChars g
+          cleanOutput  = cleanTweet output in
         do  putStrLn output
             appendFile oOutputFile (output ++ "\n")
             return g')
