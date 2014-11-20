@@ -34,22 +34,18 @@ trimEnding str =
     endsWithPunctuation w = endsWithPeriod w || endsWithComma w
     endsWithPeriod = (== '.') . last
     endsWithComma = (== ',') . last
-
-    endsWithLink = isLink . lastWord
-    lastWord = getLast ' '
-    getLast symbol = reverse . takeWhile (/= symbol) . reverse
+    endsWithLink = isLink . reverse . takeWhile (/= ' ') . reverse
+      where
+        isLink :: String -> Bool
+        isLink str = str =~ "(https?://|www.).*"
 
     -- | Find the last sentence.
-    --
-    -- Examples:
-    --
-    -- >>> lastSentence "This is a sentence. This is not"
-    -- ("This is a sentence."," This is not")
     lastSentence str =
       case findIndex isSentenceEnd (reverse str) of
         Just i -> splitAt ((length str) - i) str
         Nothing -> (str, "")
-    isSentenceEnd c = c /= ',' && not (isAlpha c) && c /= ' ' && c /= '\''
+    isSentenceEnd c =
+      c /= ',' && c /= ' ' && c /= '\'' && not (isAlpha c)
 
     -- Makes sure ends with valid sentence ender, link, or "..."
     fixEndingSyntax str =
@@ -60,6 +56,3 @@ trimEnding str =
             if length str > 137
               then fixEndingSyntax (unwords (init (words str)))
               else str ++ "..."
-
-isLink :: String -> Bool
-isLink str = str =~ "(https?://|www.).*"
