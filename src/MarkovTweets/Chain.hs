@@ -10,8 +10,8 @@ module MarkovTweets.Chain (
                           , tokenize
                           ) where
 
-import qualified Data.Map.Strict as Map
 import Data.Char ( isAlphaNum, isUpper )
+import qualified Data.Map.Strict as Map ( Map, empty, insertWith, keys, lookup )
 import System.Random ( RandomGen, StdGen, randomR )
 
 type Chain = Map.Map NGram [String]
@@ -21,21 +21,28 @@ type NGram = [String]
 -- Builds a Markov chain out of a list of words and a prefix length
 buildChain :: [String] -> Int -> Chain
 buildChain bodyList prefixLen =
-  buildChainHelper Map.empty (replicate prefixLen "" ++ bodyList)
+    let b  = replicate prefixLen "" ++ bodyList
+        ls = buildChainHelper [] b (length b)
+      in foldr insertInChain  Map.empty ls
   where
-    buildChainHelper :: Chain -> [String] -> Chain
-    buildChainHelper curMap [] = curMap
-    buildChainHelper curMap curBodyList =
-      if length curBodyList < prefixLen + 1
-        then updateMap curMap (init curBodyList) (last curBodyList)
+    insertInChain (k, e) = Map.insertWith (\[x] xs -> x:xs) k [e]
+
+    buildChainHelper acc [] _ = acc
+    buildChainHelper acc curBodyList l =
+      if l < prefixLen + 1
+        then updateAcc acc (init curBodyList) (last curBodyList)
         else
-          let newMap = updateMap curMap
+          let newMap = updateAcc acc
                 (take prefixLen curBodyList)
                 (curBodyList !! prefixLen) in
-            buildChainHelper newMap (tail curBodyList)
-    updateMap :: Chain -> [String] -> String -> Chain
-    updateMap curMap key elt =
-      Map.insert key (elt:(fromMaybe [] (Map.lookup key curMap))) curMap
+            buildChainHelper newMap (tail curBodyList) (l - 1)
+
+    updateAcc acc key elt = (key, elt):acc
+
+-- |
+-- Short-hand for @buildChain . (`tokenize` False)@
+buildChainFromString :: String -> Int -> Chain
+buildChainFromString = buildChain . (`tokenize` False)
 
 -- |
 -- Generates text by randomly walking throgh a Markov chain.
