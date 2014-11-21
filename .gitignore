@@ -1,1 +1,6 @@
 dist
+.env
+input.txt
+.cabal-sandbox
+cabal.sandbox.config
+*.prof

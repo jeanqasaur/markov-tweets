@@ -12,6 +12,10 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
+Flag no-zulipbot
+  description:         Build the text generator Zulip bot
+  default:             False
+
 library
   exposed-modules:     MarkovTweets.Chain
                      , MarkovTweets.CleanTweets
@@ -34,3 +38,24 @@ executable generate-tweets
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -threaded -O2
+
+executable zulipbot
+  main-is:             ZulipMarkovBot.hs
+  build-depends:       base >=4 && <5
+                     , containers >=0.5 && <0.6
+                     , random >=1.0 && <1.1
+                     , regex-compat >=0.95 && <1
+                     , regex-posix >=0.95 && <1
+
+                     , lifted-async >=0.2 && <0.3
+                     , transformers >=0.3 && <0.4
+                     , exceptions >=0.6 && <0.7
+                     , hzulip
+  hs-source-dirs:      src
+                     , zulipbot
+  default-language:    Haskell2010
+  ghc-options:         -threaded -O2
+  if !flag(no-zulipbot)
+    buildable: True
+  else
+    buildable: False
