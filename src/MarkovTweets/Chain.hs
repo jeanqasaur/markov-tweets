@@ -1,70 +1,103 @@
-module MarkovTweets.Chain (Chain, buildChain, generate) where
+-- |
+-- Builds markov chains out of lists of words and generates text given
+-- built chains and random generators
+module MarkovTweets.Chain (
+                            Chain
+                          , NGram
+                          , buildChain
+                          , buildChainFromString
+                          , generate
+                          , tokenize
+                          ) where
 
-import Data.Char (isUpper)
-import Data.Maybe (fromMaybe)
-import qualified Data.Map.Strict as Map
-import System.Random
+import Data.Char ( isAlphaNum, isUpper )
+import qualified Data.Map.Strict as Map ( Map, empty, insertWith, keys, lookup )
+import System.Random ( RandomGen, StdGen, randomR )
 
 type Chain = Map.Map NGram [String]
 type NGram = [String]
 
+-- |
+-- Builds a Markov chain out of a list of words and a prefix length
 buildChain :: [String] -> Int -> Chain
 buildChain bodyList prefixLen =
-  buildChainHelper Map.empty (replicate prefixLen "" ++ bodyList)
+    let b  = replicate prefixLen "" ++ bodyList
+        ls = buildChainHelper [] b (length b)
+      in foldr insertInChain  Map.empty ls
   where
-    buildChainHelper :: Chain -> [String] -> Chain
-    buildChainHelper curMap [] = curMap
-    buildChainHelper curMap curBodyList =
-      if length curBodyList < prefixLen + 1
-        then updateMap curMap (init curBodyList) (last curBodyList)
+    insertInChain (k, e) = Map.insertWith (\[x] xs -> x:xs) k [e]
+
+    buildChainHelper acc [] _ = acc
+    buildChainHelper acc curBodyList l =
+      if l < prefixLen + 1
+        then updateAcc acc (init curBodyList) (last curBodyList)
         else
-          let newMap = updateMap curMap
+          let newMap = updateAcc acc
                 (take prefixLen curBodyList)
                 (curBodyList !! prefixLen) in
-            buildChainHelper newMap (tail curBodyList)
-    updateMap :: Chain -> [String] -> String -> Chain
-    updateMap curMap key elt =
-      Map.insert key (elt:(fromMaybe [] (Map.lookup key curMap))) curMap
+            buildChainHelper newMap (tail curBodyList) (l - 1)
 
-generate :: Chain -> Int -> StdGen -> (String, StdGen)
-generate chain maxlen g = loop fstNg g' (unwords fstNg)
+    updateAcc acc key elt = (key, elt):acc
+
+-- |
+-- Short-hand for @buildChain . (`tokenize` False)@
+buildChainFromString :: String -> Int -> Chain
+buildChainFromString = buildChain . (`tokenize` False)
+
+-- |
+-- Generates text by randomly walking throgh a Markov chain.
+-- Returns the generated `String` and the new random generator
+generate :: Chain  -- ^ A markov chain, representing "likely" sequences of text
+         -> Int    -- ^ A character limit for the output
+         -> StdGen -- ^ A random generator
+                   -- (could be generalized to `RandomGen g => g` but yeah...)
+         -> (String, StdGen)
+generate chain maxlen generator =
+    let (firstNg, generator') = getFirstNGram generator
+        startStr = unwords firstNg
+      in loop firstNg generator' startStr
   where
-    (fstNg, g') = getFirstNGram g
-    loop :: NGram -> StdGen -> String -> (String, StdGen)
     loop _ g acc | length acc > maxlen = (unwords $ init $ words acc, g)
-    loop ng g acc = case getNextNGram ng g of
+    loop ng g acc = case getNextWord ng g of
         Just (word, ng', g') ->
             if length acc + length word > maxlen
-                 then (acc, g')
-                 else loop ng' g' (acc ++ " " ++ word)
+                then (acc, g')
+                else loop ng' g' (acc ++ " " ++ word)
         Nothing -> (acc, g)
 
-    capitalKeys = filter isStartNGram (Map.keys chain)
-      where
-        isStartNGram (s:ss) = not (null s) && isUpper (head s)
-
-    getFirstNGram :: StdGen -> (NGram, StdGen)
+    -- Gets the seed ngram, we should start with, by randomly choosing
+    -- a ngram corresponding to the start of a sentence
     getFirstNGram g = randomElem g capitalKeys
 
-    getNextNGram :: NGram -> StdGen -> Maybe (String, NGram, StdGen)
-    getNextNGram ng g = case getNextWord ng g of
-        Just (word, g') -> Just (word, tail ng ++ [word], g')
-        Nothing -> Nothing
+    -- Gets the next word and ngram to be used to generate text, given the
+    -- previous ngram and a random generator.
+    getNextWord ng g =
+        let nextWord = randomElem g `fmap` Map.lookup ng chain
+          in case nextWord of
+              Just (word, g') -> Just (word, tail ng ++ [word], g')
+              Nothing -> Nothing
 
+    -- Gets all keys corresponding to sentence starting ngrams
+    capitalKeys = filter isStartNGram (Map.keys chain)
       where
-        getNextWord :: NGram -> StdGen -> Maybe (String, StdGen)
-        getNextWord ng g = randomElem g `fmap` Map.lookup ng chain
+        isStartNGram [] = False
+        isStartNGram (s:_) = not (null s) && isUpper (head s)
 
-randomElem :: RandomGen g => g -> [a] -> (a, g)
+-- |
+-- Randomly chooses an element from a list.
+-- Returns the choosen element and the new random generator
+randomElem :: RandomGen g
+           => g      -- ^ A random generator
+           -> [a]    -- ^ A list
+           -> (a, g)
 randomElem g xs = let (i, g') = randomR (0, length xs - 1) g
                     in (xs !! i, g')
 
-{-
-
-g <- newStdGen
-
-let c = buildChain (words "People are cool and all here cla cla I am here Pedro Hacker School ") 2
-
-generate c 100 g
-
--}
+-- |
+-- Helper for building a list of words from a string and maybe filtering non
+-- alphanumeric characters from the output
+tokenize :: String -- ^ An input string
+         -> Bool   -- ^ Whether to strip non-alphanumeric chars
+         -> [String]
+tokenize s True  = map (filter isAlphaNum) $ words s
+tokenize s False = words s
