@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     MarkovTweets.Chain
-                     , MarkovTweets.Token
+                     , MarkovTweets.CleanTweets
   hs-source-dirs:      src
   build-depends:       base >=4 && <5
                      , containers >=0.5 && <0.6

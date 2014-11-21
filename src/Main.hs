@@ -9,7 +9,6 @@ import System.Random (newStdGen )
 
 import MarkovTweets.Chain
 import MarkovTweets.CleanTweets
-import MarkovTweets.Token
 
 data Options = Options { oInputFile :: String
                        , oOutputFile :: String

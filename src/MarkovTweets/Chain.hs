@@ -86,3 +86,11 @@ randomElem :: RandomGen g
 randomElem g xs = let (i, g') = randomR (0, length xs - 1) g
                     in (xs !! i, g')
 
+-- |
+-- Helper for building a list of words from a string and maybe filtering non
+-- alphanumeric characters from the output
+tokenize :: String -- ^ An input string
+         -> Bool   -- ^ Whether to strip non-alphanumeric chars
+         -> [String]
+tokenize s True  = map (filter isAlphaNum) $ words s
+tokenize s False = words s
