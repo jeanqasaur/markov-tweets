@@ -6,7 +6,9 @@ module MarkovTweets.Chain (
                           , NGram
                           , buildChain
                           , buildChainFromString
+                          , capitalKeys
                           , generate
+                          , generate'
                           , tokenize
                           ) where
 
@@ -52,7 +54,14 @@ generate :: Chain  -- ^ A markov chain, representing "likely" sequences of text
          -> StdGen -- ^ A random generator
                    -- (could be generalized to `RandomGen g => g` but yeah...)
          -> (String, StdGen)
-generate chain maxlen generator =
+generate chain = generate' (capitalKeys chain) chain
+
+-- |
+-- Version of `generate` which takes the sentence starting NGrams
+-- from a map as an argument, for generating several text nodes more
+-- efficiently
+generate' :: [NGram] -> Chain -> Int -> StdGen -> (String, StdGen)
+generate' ckeys chain maxlen generator =
     let (firstNg, generator') = getFirstNGram generator
         startStr = unwords firstNg
       in loop firstNg generator' startStr
@@ -67,7 +76,7 @@ generate chain maxlen generator =
 
     -- Gets the seed ngram, we should start with, by randomly choosing
     -- a ngram corresponding to the start of a sentence
-    getFirstNGram g = randomElem g capitalKeys
+    getFirstNGram g = randomElem g ckeys
 
     -- Gets the next word and ngram to be used to generate text, given the
     -- previous ngram and a random generator.
@@ -77,11 +86,14 @@ generate chain maxlen generator =
               Just (word, g') -> Just (word, tail ng ++ [word], g')
               Nothing -> Nothing
 
-    -- Gets all keys corresponding to sentence starting ngrams
-    capitalKeys = filter isStartNGram (Map.keys chain)
-      where
-        isStartNGram [] = False
-        isStartNGram (s:_) = not (null s) && isUpper (head s)
+-- |
+-- Gets all keys corresponding to sentence starting ngrams
+capitalKeys :: Map.Map NGram a -> [NGram]
+capitalKeys chain = filter isStartNGram (Map.keys chain)
+  where
+    isStartNGram [] = False
+    isStartNGram (s:_) = not (null s) && isUpper (head s)
+
 
 -- |
 -- Randomly chooses an element from a list.
