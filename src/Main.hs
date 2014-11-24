@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-import Control.Monad ( foldM_, when )
+import Control.Monad ( foldM_, unless, when )
 import Data.Maybe ( fromMaybe )
 import System.Console.GetOpt ( ArgDescr(..), ArgOrder(..), OptDescr(..), getOpt,
                                usageInfo )
@@ -17,6 +17,7 @@ data Options = Options { oInputFile :: String
                        , oStripPunctuation :: Bool
                        , oNumTweets :: Int
                        , oHelp :: Bool
+                       , oSilent :: Bool
                        }
   deriving(Show, Eq, Ord)
 
@@ -50,6 +51,10 @@ options = [ Option "i" ["input"]
                       (\n opts -> opts { oNumTweets = read n })
                       "NUMTWEETS")
                   "The number of tweets to generate"
+            , Option [] ["silent"]
+                  (NoArg
+                      (\opts -> opts { oSilent = True }))
+                  "Don't print generated text to standard output"
             , Option "h"  ["help"]
                   (NoArg
                       (\opts -> opts { oHelp = True }))
@@ -74,6 +79,7 @@ defaultOptions = Options { oInputFile = error "No input file was provided"
                          , oStripPunctuation = False
                          , oNumTweets = 1
                          , oHelp = False
+                         , oSilent = False
                          }
 
 main :: IO ()
@@ -100,7 +106,7 @@ main = do
         (\g _ -> do
             let (output, g') = generate chain oNumChars g
                 cleanOutput  = cleanTweet output
-            putStrLn cleanOutput
+            unless oSilent $ putStrLn cleanOutput
             appendFile oOutputFile (cleanOutput ++ "\n")
             return g')
         generator
