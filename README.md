@@ -1,6 +1,6 @@
 markov-tweets
 =============
-This code uses a simple Markov chain algorithm to generate Tweets from emails, or really any kind of text. (You may be interested in using this with this (Python script)[https://github.com/jeanqasaur/csail-archive-scraper] I wrote to collect all emails from MIT CSAIL's csail-related mailing list.) Generating Tweets is a little more tricky than generating regular text because of the character limitation. Because of this we have extra functionality for cleaning up Tweets, especially at the end, to help them make a little more sense.
+This code uses a simple Markov chain algorithm to generate Tweets from emails, or really any kind of text (You may be interested in using this with this [Python script](https://github.com/jeanqasaur/csail-archive-scraper) I wrote to collect all emails from MIT CSAIL's csail-related mailing list). Generating Tweets is a little more tricky than generating regular text because of the character limitation. Because of this we have extra functionality for cleaning up Tweets, especially at the end, to help them make a little more sense.
 
 To run, you need GHC and Cabal installed. To build:
 
