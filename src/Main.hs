@@ -97,6 +97,7 @@ main = do
 
     -- Initialize a new chain from input
     let chain = buildChain (tokenize input oStripPunctuation) oPrefixLen
+        ckeys = capitalKeys chain
 
     -- Create a new random number generator
     generator <- newStdGen
@@ -104,7 +105,7 @@ main = do
     -- Generate text and write output
     foldM_
         (\g _ -> do
-            let (output, g') = generate chain oNumChars g
+            let (output, g') = generate' ckeys chain oNumChars g
                 cleanOutput  = cleanTweet output
             unless oSilent $ putStrLn cleanOutput
             appendFile oOutputFile (cleanOutput ++ "\n")
